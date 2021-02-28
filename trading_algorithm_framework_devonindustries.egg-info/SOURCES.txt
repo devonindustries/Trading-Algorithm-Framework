@@ -1,0 +1,8 @@
+README.md
+setup.py
+trading_algorithm_framework/__init__.py
+trading_algorithm_framework/portfolio_classes.py
+trading_algorithm_framework_devonindustries.egg-info/PKG-INFO
+trading_algorithm_framework_devonindustries.egg-info/SOURCES.txt
+trading_algorithm_framework_devonindustries.egg-info/dependency_links.txt
+trading_algorithm_framework_devonindustries.egg-info/top_level.txt
