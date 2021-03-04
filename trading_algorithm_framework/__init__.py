@@ -1,1 +1,2 @@
-import portfolio_classes
+from portfolio_classes import *
+from stock_classes import *
