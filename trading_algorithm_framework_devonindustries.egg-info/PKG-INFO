@@ -1,13 +1,16 @@
 Metadata-Version: 2.1
 Name: trading-algorithm-framework-devonindustries
-Version: 0.0.1
+Version: 0.0.2
 Summary: Framework for trading algorithms
 Home-page: https://github.com/devonindustries/trading_algorithm_framework
 Author: Joshua Baker
 Author-email: jd.baker01@hotmail.co.nz
 License: UNKNOWN
 Project-URL: Bug Tracker, https://github.com/devonindustries/trading_algorithm_framework/issues
-Description: UNKNOWN
+Description: # Trading Algorithm Framework
+        
+        A module containing useful packages for testing and writing trading algorithms. The idea of this package is to simulate a stock exchange allowing an algorithm to enter or leave positions. The user will be able to evaluate the performance of the algorithm using various tools available in this package.
+        
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License

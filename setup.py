@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="trading-algorithm-framework-devonindustries",
-    version="0.0.1",
+    version="0.0.2",
     author="Joshua Baker",
     author_email="jd.baker01@hotmail.co.nz",
     description="Framework for trading algorithms",
@@ -23,3 +23,13 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires=">=3.6",
 )
+
+# Python release version syntax:
+# 1.2.0.dev1   Development release
+# 1.2.0a1      Alpha Release
+# 1.2.0b1      Beta Release
+# 1.2.0rc1     Release Candidate
+# 1.2.0        Final Release
+# 1.2.0.post1  Post Release
+# 15.10        Date based release
+# 23           Serial release

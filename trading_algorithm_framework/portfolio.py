@@ -1,11 +1,12 @@
-from stock_classes import *
-
 # Define a class to handle a share in a stock
 class Share:
     '''
-    Create a new share in a stock that can be added to the users portfolio
+    Create a new share in a stock that can be added to the users portfolio. Takes four arguments:
 
-    
+    - price : The price at the time of purchasing the share;
+    - volume : The volume of shares purchased;
+    - date : The date that the stock was purchased;
+    - symbol (optional) : The symbol of the stock. Empty by default.
     '''
     
     # Declare the id attribute before assignment for validation
@@ -27,7 +28,7 @@ class Share:
                 
     # Set a private id attribute using a public method to avoid overwriting
     def set_id(self, id):
-        if !self.__id:
+        if not(self.__id):
             self.__id = id
           
     # Public method to return the id
@@ -45,21 +46,6 @@ class Portfolio:
     Values that may be allocated when calling this class:
 
     - starting_balance = 50 000 (by default)
-
-    Methods:
-
-    - reset_balance : Resets the user balance. Takes one argument.
-        - (new_balance) : Set to 50 000 by default.
-
-    - buy : Enters a position. Takes two arguments.
-        - share : An instance of the share class for the stock you wish to purchase;
-        - is_long : A boolean which tells the portfolio to store the share as a long or short position.
-
-    - sell : Leaves a postion. Takes four arguments.
-        - date : The date that the share was purchased;
-        - volume : The number of shares that the user wishes to purchase. Max volume will be sold if this exceeds the existing volume;
-        - current_price : The value of the share on the date assigned;
-        - is_long : A boolean which tells the portfolio to store the share as a long or short position.
     '''
     
     # Store all of the portfolio short and long positions
@@ -96,7 +82,7 @@ class Portfolio:
         i = 0
         
         # Loop until we find a stock with the given id
-        while !pos:
+        while not(pos):
           
           # Return if the id matches
           if shlo[i].get_id() == search_id:
@@ -109,10 +95,21 @@ class Portfolio:
     
     # A function to reset the user cash
     def reset_balance(self, new_balance=50000): 
+        '''
+        Resets the user balance. Takes one argument:
+
+        - (new_balance) : Set to 50 000 by default.
+        '''
         self.balance = new_balance
         
     # A function to add a share to the users portfolio
     def buy(self, share, is_long):
+        '''
+        Enters a position. Takes two arguments:
+
+        - share : An instance of the share class for the stock you wish to purchase;
+        - is_long : A boolean which tells the portfolio to store the share as a long or short position.
+        '''
       
         # Reference the array in question
         shlo = self.long_ if is_long else self.short_
@@ -133,8 +130,16 @@ class Portfolio:
         if is_long:
             self.balance -= share.price * share.volume
             
-    # A function to sell a position that was entered on a given date
+    # A function to sell a position with a given id
     def sell(self, share_id, volume, current_price, is_long):
+        '''
+        Leaves a postion. Takes four arguments:
+
+        - share_id : The id of the share that the user wishes to sell;
+        - volume : The number of shares that the user wishes to purchase. Max volume will be sold if this exceeds the existing volume;
+        - current_price : The value of the share on the date assigned;
+        - is_long : A boolean which tells the portfolio to store the share as a long or short position.
+        '''
         
         # Reference the array in question
         shlo = self.long_ if is_long else self.short_
@@ -142,17 +147,37 @@ class Portfolio:
         # Get the position in the array that holds the desired stock
         pos = self.__get_from_id(share_id, is_long)
         
-        # Check the volume to sell and amend the share accordingly
-        if shlo[pos].volume >= volume:
-          
-          # Sell all the stock
-          pass
-          
+        # Bound the volume if it is too high
+        if volume > shlo[pos].volume: volume = shlo[pos].volume
+
+        # Now sell the stock depending on the position
+        balance += volume * current_price if is_long else volume * (shlo[pos].price - current_price)
+
+        # Remove the stock from the users portfolio if the maximum volume was sold, or adjust the volume
+        if volume == shlo[pos].volume:
+            shlo.pop(pos)
         else:
-          
-          # Sell the given number of stock
-          pass
+            shlo[pos].volume -= volume
   
     # Sell all the stock held by the portfolio
     def sell_all(self, current_price, is_long):
-        pass
+        '''
+        Leaves all positions for a given position type. Takes two arguments:
+
+        - current_price : The value of the share when the method is called
+        '''
+        
+        # Reference the array in question
+        shlo = self.long_ if is_long else self.short_
+
+        # If the array is empty, then return
+        if len(shlo) == 0: return
+
+        # Loop through all of the positions in the array
+        for i in range(0, len(shlo)):
+
+            # Get the stock id
+            temp_id = shlo[0].get_id()
+
+            # Delete the stock with that id
+            self.sell(temp_id, shlo[0].volume, current_price, is_long)
