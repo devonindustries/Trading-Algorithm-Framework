@@ -1,5 +1,5 @@
 import unittest
-from taf import portfolio as pf
+from trading_algorithm_framework import portfolio as pf
 
 class Test_Portfolio(unittest.TestCase):
 

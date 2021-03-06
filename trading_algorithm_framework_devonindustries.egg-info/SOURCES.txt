@@ -1,7 +1,7 @@
 README.md
 setup.py
-test/__init__.py
-test/test_portfolio.py
+tests/__init__.py
+tests/test_portfolio.py
 trading_algorithm_framework/__init__.py
 trading_algorithm_framework/portfolio.py
 trading_algorithm_framework/stock.py

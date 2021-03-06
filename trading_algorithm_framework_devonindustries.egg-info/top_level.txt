@@ -1,2 +1,2 @@
-test
+tests
 trading_algorithm_framework

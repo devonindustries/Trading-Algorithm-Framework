@@ -1,1 +1,2 @@
-import portfolio_classes
+from taf.portfolio import *
+from taf.stock import *
