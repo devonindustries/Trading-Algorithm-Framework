@@ -13,13 +13,13 @@ class Share:
     __id = None
     
     #----------------
-    # Private Methods
+    # Built-in Methods
     #----------------
     
-    def __init__(self, price, volume, date, symbol=None):
+    def __init__(self, price, volume, stock_date, symbol=None):
         self.price = price
         self.volume = volume
-        self.date = date
+        self.stock_date = stock_date
         self.symbol = symbol
     
     #----------------

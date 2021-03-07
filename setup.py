@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="trading-algorithm-framework-devonindustries",
-    version="0.0.2",
+    version="0.0.3",
     author="Joshua Baker",
     author_email="jd.baker01@hotmail.co.nz",
     description="Framework for trading algorithms",
@@ -21,6 +21,9 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     packages=setuptools.find_packages(),
+    # install_requires=[
+    #     'pandas'
+    # ],
     python_requires=">=3.6",
 )
 
