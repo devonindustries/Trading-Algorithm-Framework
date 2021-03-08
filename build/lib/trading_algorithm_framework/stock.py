@@ -23,10 +23,10 @@ class Point:
         low_price = None,
         high_price = None,
     ):
-        self.volume = volume
-        self.close_price = close_price
-        self.open_price = open_price
-        self.high_price = high_price
+        self.volume = int(volume)
+        self.close_price = float(close_price)
+        self.open_price = float(open_price)
+        self.high_price = float(high_price)
 
 # Define a class to store an actual stock with all of its data
 class Stock:
@@ -46,11 +46,22 @@ class Stock:
     - date_format (optional) : Denotes the arrangement of the dates. Set to '%Y-%m-%d' by default;
     '''
 
+    #----------------
+    # Private Attributes
+    #----------------
+
     # Declare a variable for checkign the headings
     __headings = ['volume', 'close', 'open', 'low', 'high']
 
+    # Declare the name of the stock
+    __symbol = None
+
     # Declare the date format just in case we need to change it later on
     __date_format = None
+
+    #----------------
+    # Public Attributes
+    #----------------
 
     # Declare a dictionary of dates as keys, and points as the corresponding data
     history = dict()
@@ -68,9 +79,12 @@ class Stock:
         data,
         date_format = '%Y-%m-%d'
     ):
+        # Store the name of the stock
+        self.set_symbol(symbol)
+
         # Store the date format
         self.set_date_format(date_format)
-        
+
         # Verify that the dataframe headings are formatted correctly
         if not(self.__verify_headings(data.columns)): 
             raise ValueError('Headings do not line up!') from None
@@ -79,34 +93,42 @@ class Stock:
         for index, row in data.iterrows():
             
             # Convert the date so that it is a date object
-            new_date = datetime.strptime(index, self.get_date_format())
+            new_date = datetime.strptime(index, self.__date_format)
 
             # Define a new point
             new_point = Point(
-                int(row[__headings[0]]),
-                int(row[__headings[1]]),
-                int(row[__headings[2]]),
-                int(row[__headings[3]]),
-                int(row[__headings[4]])
+                row[self.__headings[0]],
+                row[self.__headings[1]],
+                row[self.__headings[2]],
+                row[self.__headings[3]],
+                row[self.__headings[4]]
             )
 
             # Store each point in the dictionary
             self.history[new_date] = new_point
 
         # Store the dataframe as its own object
-        history_df = data
+        self.history_df = data
 
     #----------------
     # Get / Set Methods
     #----------------
 
+    # Symbol
+    def get_symbol(self):
+        return self.__symbol
+
+    def set_symbol(self, symbol):
+        if not(self.__symbol):
+            self.__symbol = symbol
+
     # Date format
-    def get_date_format(self, date_format):
+    def get_date_format(self):
         return self.__date_format
 
     def set_date_format(self, date_format):
         if not(self.__date_format): 
-            self.__date_format = datetime
+            self.__date_format = date_format
     
     #----------------
     # Private Methods
@@ -116,11 +138,16 @@ class Stock:
     def __verify_headings(self, columns):
         
         # Check that the headings line up with the columns
-        check = [x in columns for x in headings]
+        check = [x in columns for x in self.__headings]
 
         # If there is a false in there, then the validation has failed
         return(not(False in check))
 
+    #----------------
+    # Public Methods
+    #----------------
+
+    
 
 # Define a class to handle indices (this will be properly implemented later)
 class Index:
