@@ -13,8 +13,9 @@ class Point:
     - close_price : The closing price for a given date;
     - open_price : The opening price for a given date;
     - low_price : The low price for a given date;
-    - high_price : The high price for a given date;
+    - high_price : The high price for a given date.
     '''
+    
     def __init__(
         self,
         volume,
@@ -43,7 +44,7 @@ class Stock:
         - open
         - low
         - high
-    - date_format (optional) : Denotes the arrangement of the dates. Set to '%Y-%m-%d' by default;
+    - date_format (optional) : Denotes the arrangement of the dates. Set to '%Y-%m-%d' by default.
     '''
 
     #----------------
@@ -55,9 +56,6 @@ class Stock:
 
     # Declare the name of the stock
     __symbol = None
-
-    # Declare the date format just in case we need to change it later on
-    __date_format = None
 
     #----------------
     # Public Attributes
@@ -73,42 +71,16 @@ class Stock:
     # Built-in Methods
     #----------------
 
-    def __init__(
-        self,
-        symbol,
-        data,
-        date_format = '%Y-%m-%d'
-    ):
+    def __init__(self, symbol, data, date_format='%Y-%m-%d'):
+
         # Store the name of the stock
         self.set_symbol(symbol)
 
         # Store the date format
         self.set_date_format(date_format)
 
-        # Verify that the dataframe headings are formatted correctly
-        if not(self.__verify_headings(data.columns)): 
-            raise ValueError('Headings do not line up!') from None
-        
-        # Store each point for the stock
-        for index, row in data.iterrows():
-            
-            # Convert the date so that it is a date object
-            new_date = datetime.strptime(index, self.__date_format)
-
-            # Define a new point
-            new_point = Point(
-                row[self.__headings[0]],
-                row[self.__headings[1]],
-                row[self.__headings[2]],
-                row[self.__headings[3]],
-                row[self.__headings[4]]
-            )
-
-            # Store each point in the dictionary
-            self.history[new_date] = new_point
-
-        # Store the dataframe as its own object
-        self.history_df = data
+        # Update the data frame
+        self.update_history(data, date_format)
 
     #----------------
     # Get / Set Methods
@@ -121,14 +93,6 @@ class Stock:
     def set_symbol(self, symbol):
         if not(self.__symbol):
             self.__symbol = symbol
-
-    # Date format
-    def get_date_format(self):
-        return self.__date_format
-
-    def set_date_format(self, date_format):
-        if not(self.__date_format): 
-            self.__date_format = date_format
     
     #----------------
     # Private Methods
@@ -147,7 +111,41 @@ class Stock:
     # Public Methods
     #----------------
 
-    
+    def update_history(self, data, date_format='%Y-%m-%d'):
+        '''
+        Update all of the records in the class instance.
+
+        We assume that the date format is set to the default, however the user may change it if necessary.
+
+        Takes 2 arguments:
+        
+        - data : The dataframe containing all of the new data;
+        - date_format (optional) : Denotes the arrangement of the dates. Set to '%Y-%m-%d' by default.
+        '''
+         # Verify that the dataframe headings are formatted correctly
+        if not(self.__verify_headings(data.columns)): 
+            raise ValueError('Headings do not line up!') from None
+        
+        # Store each point for the stock
+        for index, row in data.iterrows():
+            
+            # Convert the date so that it is a date object
+            new_date = datetime.strptime(index, date_format)
+
+            # Define a new point
+            new_point = Point(
+                row[self.__headings[0]],
+                row[self.__headings[1]],
+                row[self.__headings[2]],
+                row[self.__headings[3]],
+                row[self.__headings[4]]
+            )
+
+            # Store each point in the dictionary
+            self.history[new_date] = new_point
+
+        # Store the dataframe as its own object
+        self.history_df = data
 
 # Define a class to handle indices (this will be properly implemented later)
 class Index:
