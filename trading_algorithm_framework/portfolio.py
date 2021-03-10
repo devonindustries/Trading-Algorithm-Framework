@@ -16,6 +16,29 @@ class Share:
         self.volume = volume
 
 
+# Define a class to store all of the record information regarding shares
+class ShareRecord:
+    '''
+    Create a new share record to handle the users portfolio history for a given asset. Takes 3 arguments:
+
+    - entry_price : The price when the position was entered;
+    - exit_price : The price when the position was exited;
+    - volume : The volume of stocks during the transaction;
+    - entry_datetime : The datetime object associated with the time that the position was entered.
+    '''
+    
+    #----------------
+    # Built-in Methods
+    #----------------
+
+    def __init__(self, entry_price, exit_price, volume, entry_datetime):
+        self.entry_price = entry_price
+        self.exit_price = exit_price
+        self.volume = volume
+        self.entry_datetime = entry_datetime
+
+
+
 # Define a class to handle the positions for a given symbol. This will be handled by the Portfolio class
 class Asset:
     '''
@@ -42,7 +65,7 @@ class Asset:
     # Built-in Methods
     #----------------
 
-    def __init__():
+    def __init__(self):
         pass
 
     #----------------
@@ -62,11 +85,35 @@ class Asset:
         self.positions[asset_type][entry_datetime] = share
 
 
-    def leave_position(self, asset_type, current_price, volume, entry_datetime):
-        
-        # Bound the volume
-        stock_volume = self.positions[asset_type][entry_datetime].volume
-        if volume > stock_volume: volume = stock_volume 
+    def leave_position(self, asset_type, current_price, volume, entry_datetime, exit_datetime):
+
+        stored_volume = positions[asset_type][entry_datetime].volume
+
+        # 1. Return if the volume is negative
+        if volume <= 0:
+            return
+
+        # 2. If the volume is less than the volume stored, deduct the correct volume
+        elif volume < stored_volume:
+            positions[asset_type][entry_datetime].volume -= volume
+
+        # 3. If the volume is greater than the stored volume, remove the stock
+        else:
+            volume = stored_volume
+
+        # 4. Store the transaction in history
+        history[asset_type][exit_datetime] = ShareRecord(
+            positions[asset_type][entry_datetime].price,
+            current_price,
+            volume,
+            entry_datetime
+        )
+
+        # 5. Calculate the new statistics
+        self.__calculate_stats()
+
+        pass
+
 
 
 # Define a class to handle the stock information in the users portfolio
@@ -145,9 +192,9 @@ class Portfolio:
         pass
 
 
-    def sell(self, symbol, asset_type, current_price, volume, entry_datetime):
+    def sell(self, symbol, asset_type, current_price, volume, entry_datetime, sell_datetime):
         '''
-        Leaves a position. Takes 3 arguments:
+        Leaves a position. Takes 4 arguments:
 
         - symbol : The symbol of the asset being sold;
         - asset_type : The type of position the user wishes to leave. Takes 2 possible values:
@@ -155,19 +202,21 @@ class Portfolio:
             - 'short' : Enter a short position;
         - current_price : The current price of the stock;
         - volume : The volume of stock that the user wishes to sell.
-        - entry_datetime : The datetime object associated with the time that the position was entered.
+        - entry_datetime : The datetime object associated with the time that the position was entered;
+        - sell_datetime : The datetime object associated with the time that the position is being sold.
         '''
         pass
 
 
-    def sell_all(self, symbol, asset_type):
+    def sell_all(self, symbol, asset_type, sell_datetime):
         '''
         Leaves all positions. Takes 2 arguments:
 
         - symbol : The symbol of the asset being sold;
         - asset_type : The type of position the user wishes to leave. Takes 2 possible values:
             - 'long' : Enter a long position;
-            - 'short' : Enter a short position.
+            - 'short' : Enter a short position;
+        - sell_datetime : The datetime object associated with the time that the position is being sold.
         '''
         pass
 
