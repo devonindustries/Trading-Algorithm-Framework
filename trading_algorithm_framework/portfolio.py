@@ -15,6 +15,25 @@ class Share:
         self.price = price
         self.volume = volume
 
+class Option:
+    '''
+    Create a new option order for a stock that can be added to the users portfolio.
+
+    - strike_price : The strike price for the option;
+    - expiry_datetime : The datetime object associated with the expiration date of the stock;
+    - contracts : The number of options contracts that the user wishes to enter;
+    - premium (optional) : The premium that the user pays for the call, or recieves for the put. Set to zero by default;
+    - style (optional) : The type of option that the user is trading with. Takes two possible values:
+        - 'us' : (default) American style option;
+        - 'eu' : (currently not supported!) European style option.
+    '''
+    
+    #----------------
+    # Built-in Methods
+    #----------------
+
+    def __init__(self, strike_price, expiry_datetime, contracts, premium=0, style='us'):
+        
 
 # Define a class to store all of the record information regarding shares
 class ShareRecord:
@@ -71,7 +90,8 @@ class Asset:
         self.exposure = 0
         self.returns = 0
 
-        # Calculate the users exposure. This is given by total long positions minus total short positions. Also calculate the users returns.
+        # Calculate the users exposure. This is given by total long positions minus total short positions. 
+        # Also calculate the users returns for long positions.
         long_ = self.positions['long']
         short_ = self.positions['short']
 
