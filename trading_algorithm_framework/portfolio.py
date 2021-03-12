@@ -15,25 +15,6 @@ class Share:
         self.price = price
         self.volume = volume
 
-class Option:
-    '''
-    Create a new option order for a stock that can be added to the users portfolio.
-
-    - strike_price : The strike price for the option;
-    - expiry_datetime : The datetime object associated with the expiration date of the stock;
-    - contracts : The number of options contracts that the user wishes to enter;
-    - premium (optional) : The premium that the user pays for the call, or recieves for the put. Set to zero by default;
-    - style (optional) : The type of option that the user is trading with. Takes two possible values:
-        - 'us' : (default) American style option;
-        - 'eu' : (currently not supported!) European style option.
-    '''
-    
-    #----------------
-    # Built-in Methods
-    #----------------
-
-    def __init__(self, strike_price, expiry_datetime, contracts, premium=0, style='us'):
-        
 
 # Define a class to store all of the record information regarding shares
 class ShareRecord:
@@ -57,6 +38,42 @@ class ShareRecord:
         self.entry_datetime = entry_datetime
 
 
+class Option:
+    '''
+    Create a new option order for a stock that can be added to the users portfolio. Takes 5 arguments:
+
+    - strike_price : The strike price for the option;
+    - expiry_datetime : The datetime object associated with the expiration date of the stock;
+    - contracts : The number of options contracts that the user wishes to enter. One contract equates to 100 shares;
+    - premium (optional) : The premium that the user pays for the call, or recieves for the put. Set to zero by default;
+    - style (optional) : The type of option that the user is trading with. Takes two possible values:
+        - 'us' : (default) American style option;
+        - 'eu' : (currently not supported!) European style option.
+    '''
+    
+    #----------------
+    # Built-in Methods
+    #----------------
+
+    def __init__(self, strike_price, expiry_datetime, contracts, premium=0, style='us'):
+
+        # Keep consistent with the share class
+        self.price = strike_price
+        self.volume = contracts
+
+        # Additional extras that are specific to an option
+        self.expiry_datetime = expiry_datetime
+        self.premium = premium
+        self.style = style
+
+
+class OptionRecord:
+    '''
+    Create a new option record to handle the users portfolio history for a given option. Takes
+    '''
+    def __init__(self):
+        pass
+
 
 # Define a class to handle the positions for a given symbol. This will be handled by the Portfolio class
 class Asset:
@@ -69,7 +86,11 @@ class Asset:
 
         # Define dictionaries to hold the users long and short positions in the given stock
         'long' : dict(),
-        'short' : dict()
+        'short' : dict(),
+
+        # Define dictionaries to hold the users call and put for options stocks
+        'call' : dict(),
+        'put' : dict()
     }
     
     #----------------
@@ -117,37 +138,47 @@ class Asset:
     # Public Methods
     #----------------
 
+    # Enter a position with a stock or option
     def enter_position(self, asset_type, share, entry_datetime):
 
         # Append the new share in the relevant list
         self.positions[asset_type][entry_datetime] = share
 
 
+    # Leave a position with a stock or option
     def leave_position(self, asset_type, current_price, volume, entry_datetime, exit_datetime):
-
+        
+        # Get the volume of the share in question
         stored_volume = positions[asset_type][entry_datetime].volume
 
-        # 1. Return if the volume is negative
+        # Return if the volume is negative
         if volume <= 0:
             return
 
-        # 2. If the volume is less than the volume stored, deduct the correct volume
+        # If the volume is less than the volume stored, deduct the correct volume
         elif volume < stored_volume:
             positions[asset_type][entry_datetime].volume -= volume
 
-        # 3. If the volume is greater than the stored volume, remove the stock
+        # If the volume is greater than the stored volume, remove the stock
         else:
             volume = stored_volume
 
-        # 4. Store the transaction in history
-        history[asset_type][exit_datetime] = ShareRecord(
-            positions[asset_type][entry_datetime].price,
-            current_price,
-            volume,
-            entry_datetime
-        )
+        if asset_type in ['long', 'short']:
 
-        # 5. Calculate the new statistics
+            # Store the transaction in history
+            history[asset_type][exit_datetime] = ShareRecord(
+                positions[asset_type][entry_datetime].price,
+                current_price,
+                volume,
+                entry_datetime
+            )
+
+        elif asset_type in ['call', 'put']:
+
+            # Store an option transaction in history
+
+
+        # Calculate the new statistics
         self.__calculate_stats()
 
 
@@ -219,9 +250,11 @@ class Portfolio:
         Enters a position. Takes 4 arguments:
 
         - symbol : The stock symbol that the user is buying stock with;
-        - asset_type : The type of position that the user wishes to enter. Takes 2 possible values:
+        - asset_type : The type of position that the user wishes to enter. Takes 4 possible values:
             - 'long' : Enter a long position;
             - 'short' : Enter a short position;
+            - 'call' : Enter a call option;
+            - 'put' : Enter a put option.
         - share : An instance of the share class that the user is entering the position with;
         - entry_datetime : The datetime object associated with the time the position was entered.
         '''
@@ -229,12 +262,18 @@ class Portfolio:
         # Add the symbol if it doesn't exist
         self.add_symbol(symbol)
 
-        # Purchase a position in that stock
-        self.positions[symbol].enter_position(
-            asset_type,
-            share,
-            entry_datetime
-        )
+        # Check which type of position the user wishes to enter
+        if asset_type in ['long', 'short']:
+
+            # Purchase a position in that stock
+            self.positions[symbol].enter_position(
+                asset_type,
+                share,
+                entry_datetime
+            )
+
+        elif asset_type in ['call', 'put']:
+            pass
 
 
     def sell(self, symbol, asset_type, current_price, volume, entry_datetime, exit_datetime):
@@ -243,8 +282,10 @@ class Portfolio:
 
         - symbol : The symbol of the asset being sold;
         - asset_type : The type of position the user wishes to leave. Takes 2 possible values:
-            - 'long' : Enter a long position;
-            - 'short' : Enter a short position;
+            - 'long' : Leave a long position;
+            - 'short' : Leave a short position;
+            - 'call' : Leave a call option;
+            - 'put' : Leave a put option.
         - current_price : The current price of the stock;
         - volume : The volume of stock that the user wishes to sell.
         - entry_datetime : The datetime object associated with the time that the position was entered;
@@ -254,14 +295,20 @@ class Portfolio:
         # Check that the symbol actually exists
         if not(symbol in self.positions.keys()): return
 
-        # Sell the position for that symbol
-        self.positions[symbol].leave_position(
-            asset_type,
-            current_price,
-            volume,
-            entry_datetime,
-            exit_datetime
-        )
+        # Check which type of position the user wishes to enter
+        if asset_type in ['long', 'short']:
+
+            # Sell the position for that symbol
+            self.positions[symbol].leave_position(
+                asset_type,
+                current_price,
+                volume,
+                entry_datetime,
+                exit_datetime
+            )
+
+        elif asset_type in ['call', 'put']:
+            pass
 
 
     def sell_all(self, symbol, asset_type, current_price, exit_datetime):
@@ -270,8 +317,10 @@ class Portfolio:
 
         - symbol : The symbol of the asset being sold;
         - asset_type : The type of position the user wishes to leave. Takes 2 possible values:
-            - 'long' : Enter a long position;
-            - 'short' : Enter a short position;
+            - 'long' : Leave a long position;
+            - 'short' : Leave a short position;
+            - 'call' : Leave a call option;
+            - 'put' : Leave a put option.
         - current_price : The current price of the stock;
         - exit_datetime : The datetime object associated with the time that the position is being sold.
         '''
@@ -279,12 +328,18 @@ class Portfolio:
         # Check that the symbol actually exists
         if not(symbol in self.positions.keys()): return
 
-        # Sell all of the positions by looping through all of the existing datetime identifiers
-        for date_key in self.positions[symbol].positions.keys()
-            self.positions[symbol].leave_position(
-                asset_type,
-                current_price,
-                self.positions[symbol].positions[date_key].volume,
-                date_key,
-                exit_datetime
-            )
+        # Check which type of position the user wishes to enter
+        if asset_type in ['long', 'short']:
+
+            # Sell all of the positions by looping through all of the existing datetime identifiers
+            for date_key in self.positions[symbol].positions.keys()
+                self.positions[symbol].leave_position(
+                    asset_type,
+                    current_price,
+                    self.positions[symbol].positions[date_key].volume,
+                    date_key,
+                    exit_datetime
+                )
+
+        elif asset_type in ['call', 'put']:
+            pass
