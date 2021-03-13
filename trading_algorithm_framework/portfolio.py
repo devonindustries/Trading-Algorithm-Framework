@@ -1,4 +1,8 @@
-# Define a class to handle a share in a stock
+#----------------
+# Data Structures
+#----------------
+
+
 class Share:
     '''
     Create a new share in a stock that can be added to the users portfolio. Takes 2 arguments:
@@ -16,7 +20,6 @@ class Share:
         self.volume = volume
 
 
-# Define a class to store all of the record information regarding shares
 class ShareRecord:
     '''
     Create a new share record to handle the users portfolio history for a given asset. Takes 4 arguments:
@@ -42,9 +45,9 @@ class Option:
     '''
     Create a new option order for a stock that can be added to the users portfolio. Takes 5 arguments:
 
-    - strike_price : The strike price for the option;
+    - price : The strike price for the option;
     - expiry_datetime : The datetime object associated with the expiration date of the stock;
-    - contracts : The number of options contracts that the user wishes to enter. One contract equates to 100 shares;
+    - volume : The number of options contracts that the user wishes to enter. One contract equates to 100 shares;
     - premium (optional) : The premium that the user pays for the call, or recieves for the put. Set to zero by default;
     - style (optional) : The type of option that the user is trading with. Takes two possible values:
         - 'us' : (default) American style option;
@@ -55,11 +58,11 @@ class Option:
     # Built-in Methods
     #----------------
 
-    def __init__(self, strike_price, expiry_datetime, contracts, premium=0, style='us'):
+    def __init__(self, price, volume, expiry_datetime, premium=0, style='us'):
 
         # Keep consistent with the share class
-        self.price = strike_price
-        self.volume = contracts
+        self.price = price
+        self.volume = volume
 
         # Additional extras that are specific to an option
         self.expiry_datetime = expiry_datetime
@@ -69,13 +72,31 @@ class Option:
 
 class OptionRecord:
     '''
-    Create a new option record to handle the users portfolio history for a given option. Takes
+    Create a new option record to handle the users portfolio history for a given option. Takes 7 arguments:
+
+    - price : The strike price for the option;
+    - exit_price : The price that the user left the option position at;
+    - volume : The number of contracts that the user pulled out from. One contract equates to 100 shares;
+    - entry_datetime : The date that the user bought the option;
+    - expiry_datetime : The expiry date of the option;
+
+    See the docstring for the 'Option' class for information about the optional 'premium' and 'style' arguments.
     '''
-    def __init__(self):
-        pass
+    def __init__(self, price, exit_price, volume, entry_datetime, expiry_datetime, premium=0, style='us'):
+        self.price = price
+        self.exit_price = exit_price
+        self.volume = volume
+        self.entry_datetime = entry_datetime
+        self.expiry_datetime = expiry_datetime
+        self.premium = premium
+        self.style = style 
+        
+
+#----------------
+# Portfolio Classes
+#----------------
 
 
-# Define a class to handle the positions for a given symbol. This will be handled by the Portfolio class
 class Asset:
     '''
     Create a new instance of the asset class to handle the users positions for any given symbol.
@@ -182,8 +203,6 @@ class Asset:
         self.__calculate_stats()
 
 
-
-# Define a class to handle the stock information in the users portfolio
 class Portfolio:
     '''
     Create a new portfolio to purchase shares with.
