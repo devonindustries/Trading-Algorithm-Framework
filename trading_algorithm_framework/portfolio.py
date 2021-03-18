@@ -2,7 +2,6 @@
 # Data Structures
 #----------------
 
-
 class Share:
     '''
     Create a new share in a stock that can be added to the users portfolio. Takes 2 arguments:
@@ -74,7 +73,7 @@ class OptionRecord:
     '''
     Create a new option record to handle the users portfolio history for a given option. Takes 7 arguments:
 
-    - price : The strike price for the option;
+    - entry_price : The strike price for the option;
     - exit_price : The price that the user left the option position at;
     - volume : The number of contracts that the user pulled out from. One contract equates to 100 shares;
     - entry_datetime : The date that the user bought the option;
@@ -82,8 +81,8 @@ class OptionRecord:
 
     See the docstring for the 'Option' class for information about the optional 'premium' and 'style' arguments.
     '''
-    def __init__(self, price, exit_price, volume, entry_datetime, expiry_datetime, premium=0, style='us'):
-        self.price = price
+    def __init__(self, entry_price, exit_price, volume, entry_datetime, expiry_datetime, premium=0, style='us'):
+        self.entry_price = entry_price
         self.exit_price = exit_price
         self.volume = volume
         self.entry_datetime = entry_datetime
@@ -96,14 +95,13 @@ class OptionRecord:
 # Portfolio Classes
 #----------------
 
-
 class Asset:
     '''
     Create a new instance of the asset class to handle the users positions for any given symbol.
     '''
 
     # The positions that the user has entered, and an identical history dictionary
-    positions, history = {
+    positions, history = [{
 
         # Define dictionaries to hold the users long and short positions in the given stock
         'long' : dict(),
@@ -112,16 +110,31 @@ class Asset:
         # Define dictionaries to hold the users call and put for options stocks
         'call' : dict(),
         'put' : dict()
-    }
+
+    } for x in range(2)]
     
     #----------------
     # Built-in Methods
     #----------------
 
     def __init__(self):
+        # Set the users exposure and returns to zero
         self.exposure = 0
         self.returns = 0
 
+        # Set a private variable to store the multiplier for options multiplier
+        self.__op_mul = 100
+
+    #----------------
+    # Get & Set Methods
+    #----------------
+
+    def set_opmul(self, new_opmul):
+        self.__op_mul = new_opmul
+
+    def get_opmul(self):
+        return self.__op_mul
+        
     #----------------
     # Private Methods
     #----------------
@@ -137,6 +150,9 @@ class Asset:
         long_ = self.positions['long']
         short_ = self.positions['short']
 
+        call_ = self.positions['call']
+        put_ = self.positions['put']
+
         for key in long_:
             self.exposure += long_[key].price * long_[key].volume
             self.returns -= long_[key].price * long_[key].volume
@@ -144,9 +160,19 @@ class Asset:
         for key in short_:
             self.exposure -= short_[key].price * short_[key].volume
 
+        for key in call_:
+            self.exposure += call_[key].price * call_[key].volume * self.__op_mul
+            self.returns -= call_[key].price * call_[key].volume * self.__op_mul
+
+        for key in put_:
+            self.exposure -= put_[key].price * put_[key].volume * self.__op_mul
+
         # Calculate the users returns based on the stock purchase history
         long_ = self.history['long']
         short_ = self.history['short']
+
+        call_ = self.history['call']
+        put_ = self.history['put']
 
         for key in long_:
             self.returns += long_[key].exit_price * long_[key].volume
@@ -154,6 +180,19 @@ class Asset:
         for key in short_:
             self.returns += (short_[key].entry_price - short_[key].exit_price) * short_[key].volume
 
+        for key in call_:
+            self.returns += call_[key].exit_price * call_[key].volume * self.__op_mul
+
+        for key in put_:
+            self.returns += (put_[key].entry_price - put_[key].exit_price) * put_[key].volume * self.__op_mul
+
+    def __clean_positions(self):
+
+        # Check that all stocks with volume 0 have been removed
+        for pos_type in positions.keys():
+            for date_key in positions[pos_type].keys():
+                if positions[pos_type][date_key].volume == 0:
+                    positions[pos_type].pop(date_key)
 
     #----------------
     # Public Methods
@@ -178,12 +217,16 @@ class Asset:
 
         # If the volume is less than the volume stored, deduct the correct volume
         elif volume < stored_volume:
-            positions[asset_type][entry_datetime].volume -= volume
+            stored_volume -= volume
 
         # If the volume is greater than the stored volume, remove the stock
         else:
             volume = stored_volume
 
+            # Set the stored volume to zero so that we can clear it later
+            stored_volume = 0
+
+        # If we are only concerned with a regular stock
         if asset_type in ['long', 'short']:
 
             # Store the transaction in history
@@ -194,10 +237,23 @@ class Asset:
                 entry_datetime
             )
 
+        # If we are concerned with options
         elif asset_type in ['call', 'put']:
 
-            # Store an option transaction in history
+            # Store the transaction in history
+            history[asset_type][exit_datetime] = OptionRecord(
+                positions[asset_type][entry_datetime].price,
+                current_price,
+                volume,
+                entry_datetime,
+                positions[asset_type][entry_datetime].expiry_datetime,
+                positions[asset_type][entry_datetime].premium,
+                positions[asset_type][entry_datetime].style
+            )
 
+
+        # Clear out any unwanted data in the positions dictionary
+        self.__clean_positions()
 
         # Calculate the new statistics
         self.__calculate_stats()
@@ -227,7 +283,21 @@ class Portfolio:
         if type(symbols) == list: 
             for symbol in symbols: 
                 self.add_symbol(symbol)
-          
+
+    #----------------
+    # Private Methods
+    #----------------
+
+    def __check_share_type(self, asset_type, share):
+
+        # Check that the share instance matches the expected class type
+        if asset_type in ['long', 'short']:
+            return type(share) == Share
+        elif asset_type in ['call', 'put']:
+            return type(share) == Option
+        else:
+            return False
+
     #----------------
     # Public Methods
     #----------------
@@ -274,26 +344,22 @@ class Portfolio:
             - 'short' : Enter a short position;
             - 'call' : Enter a call option;
             - 'put' : Enter a put option.
-        - share : An instance of the share class that the user is entering the position with;
+        - share : An instance of the share / option class that the user is entering the position with;
         - entry_datetime : The datetime object associated with the time the position was entered.
         '''
+
+        # Validation for asset type and share type
+        if not(self.__check_share_type(asset_type, share)): return
 
         # Add the symbol if it doesn't exist
         self.add_symbol(symbol)
 
-        # Check which type of position the user wishes to enter
-        if asset_type in ['long', 'short']:
-
-            # Purchase a position in that stock
-            self.positions[symbol].enter_position(
-                asset_type,
-                share,
-                entry_datetime
-            )
-
-        elif asset_type in ['call', 'put']:
-            pass
-
+        # Purchase a position in that stock
+        self.positions[symbol].enter_position(
+            asset_type,
+            share,
+            entry_datetime
+        )
 
     def sell(self, symbol, asset_type, current_price, volume, entry_datetime, exit_datetime):
         '''
@@ -311,24 +377,20 @@ class Portfolio:
         - exit_datetime : The datetime object associated with the time that the position is being sold.
         '''
         
+        # Validation for asset type and share type
+        if not(self.__check_share_type(asset_type, share)): return
+
         # Check that the symbol actually exists
         if not(symbol in self.positions.keys()): return
 
-        # Check which type of position the user wishes to enter
-        if asset_type in ['long', 'short']:
-
-            # Sell the position for that symbol
-            self.positions[symbol].leave_position(
-                asset_type,
-                current_price,
-                volume,
-                entry_datetime,
-                exit_datetime
-            )
-
-        elif asset_type in ['call', 'put']:
-            pass
-
+        # Sell the position for that symbol
+        self.positions[symbol].leave_position(
+            asset_type,
+            current_price,
+            volume,
+            entry_datetime,
+            exit_datetime
+        )
 
     def sell_all(self, symbol, asset_type, current_price, exit_datetime):
         '''
@@ -344,21 +406,18 @@ class Portfolio:
         - exit_datetime : The datetime object associated with the time that the position is being sold.
         '''
         
+        # Validation for asset type and share type
+        if not(self.__check_share_type(asset_type, share)): return
+
         # Check that the symbol actually exists
         if not(symbol in self.positions.keys()): return
 
-        # Check which type of position the user wishes to enter
-        if asset_type in ['long', 'short']:
-
-            # Sell all of the positions by looping through all of the existing datetime identifiers
-            for date_key in self.positions[symbol].positions.keys()
-                self.positions[symbol].leave_position(
-                    asset_type,
-                    current_price,
-                    self.positions[symbol].positions[date_key].volume,
-                    date_key,
-                    exit_datetime
-                )
-
-        elif asset_type in ['call', 'put']:
-            pass
+        # Sell all of the positions by looping through all of the existing datetime identifiers
+        for date_key in self.positions[symbol].positions.keys():
+            self.positions[symbol].leave_position(
+                asset_type,
+                current_price,
+                self.positions[symbol].positions[date_key].volume,
+                date_key,
+                exit_datetime
+            )        
