@@ -7,16 +7,39 @@ class Share:
     Create a new share in a stock that can be added to the users portfolio. Takes 2 arguments:
 
     - price : The price at the time of purchasing the share;
-    - volume : The volume of shares purchased.
+    - volume : The volume of shares purchased;
+    - stop_loss (optional) : Set a stop-loss for a given stock;
+    - take_profit (optional) : Set a take profit for a given stock;
+    - sensitivity (optional) : The smallest distance between the share price and the SL / TP. Measured in pips and set to 100 by default;
+    - ratio (optional) : The multiplier of sensitivity for either bound of the SL or TP. The SL sensitivity = 2 * sensitivity * (1 - ratio), and the TP sensitivity = 2 * sensitivity * ratio. Set to 0.5 by default.
     '''
     
     #----------------
     # Built-in Methods
     #----------------
     
-    def __init__(self, price, volume):
+    def __init__(self, price, volume, stop_loss=None, take_profit=None, sensitivity=100, ratio=0.5):
+
+        # Store the stock price and volume
         self.price = price
         self.volume = volume
+
+        # Calculate the sensitivity for both values
+        sen_sl = 2 * sensitivity * (1 - ratio)
+        sen_tp = 2 * sensitivity * ratio
+
+        # Check that the user has entered an SL or TP and adjust so that it fits the sensitivity
+        if stop_loss:
+            if price - stop_loss < sen_sl:
+                stop_loss = price - sen_sl
+
+        if take_profit:
+            if take_profit - price < sen_tp:
+                take_profit = price + sen_tp
+
+        # Store the SL and TP
+        self.stop_loss = stop_loss
+        self.take_profit = take_profit
 
 
 class ShareRecord:
@@ -50,23 +73,44 @@ class Option:
     - premium (optional) : The premium that the user pays for the call, or recieves for the put. Set to zero by default;
     - style (optional) : The type of option that the user is trading with. Takes two possible values:
         - 'us' : (default) American style option;
-        - 'eu' : (currently not supported!) European style option.
+        - 'eu' : (currently not supported!) European style option;
+    - stop_loss (optional) : Set a stop-loss for a given stock;
+    - take_profit (optional) : Set a take profit for a given stock;
+    - sensitivity (optional) : The smallest distance between the share price and the SL / TP. Measured in pips and set to 100 by default;
+    - ratio (optional) : The multiplier of sensitivity for either bound of the SL or TP. The SL sensitivity = 2 * sensitivity * (1 - ratio), and the TP sensitivity = 2 * sensitivity * ratio. Set to 0.5 by default.
     '''
     
     #----------------
     # Built-in Methods
     #----------------
 
-    def __init__(self, price, volume, expiry_datetime, premium=0, style='us'):
+    def __init__(self, price, volume, expiry_datetime, premium=0, style='us', stop_loss=None, take_profit=None, sensitivity=100, ratio=0.5):
 
         # Keep consistent with the share class
         self.price = price
         self.volume = volume
 
+        # Calculate the sensitivity for both values
+        sen_sl = 2 * sensitivity * (1 - ratio)
+        sen_tp = 2 * sensitivity * ratio
+
+        # Check that the user has entered an SL or TP and adjust so that it fits the sensitivity
+        if stop_loss:
+            if price - stop_loss < sen_sl:
+                stop_loss = price - sen_sl
+
+        if take_profit:
+            if take_profit - price < sen_tp:
+                take_profit = price + sen_tp
+
         # Additional extras that are specific to an option
         self.expiry_datetime = expiry_datetime
         self.premium = premium
         self.style = style
+
+        # Store the SL and TP
+        self.stop_loss = stop_loss
+        self.take_profit = take_profit
 
 
 class OptionRecord:

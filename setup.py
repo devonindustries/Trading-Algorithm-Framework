@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="trading-algorithm-framework-devonindustries",
-    version="0.0.4",
+    version="0.0.5",
     author="Joshua Baker",
     author_email="jd.baker01@hotmail.co.nz",
     description="Framework for trading algorithms",
