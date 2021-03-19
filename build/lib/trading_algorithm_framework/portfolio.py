@@ -4,7 +4,7 @@
 
 class Share:
     '''
-    Create a new share in a stock that can be added to the users portfolio. Takes 2 arguments:
+    Create a new share in a stock that can be added to the users portfolio. Takes 6 arguments:
 
     - price : The price at the time of purchasing the share;
     - volume : The volume of shares purchased;
@@ -63,9 +63,9 @@ class ShareRecord:
         self.entry_datetime = entry_datetime
 
 
-class Option:
+class Option(Share):
     '''
-    Create a new option order for a stock that can be added to the users portfolio. Takes 5 arguments:
+    Create a new option order for a stock that can be added to the users portfolio. Inherits from the Share class, and takes 9 arguments:
 
     - price : The strike price for the option;
     - expiry_datetime : The datetime object associated with the expiration date of the stock;
@@ -86,34 +86,18 @@ class Option:
 
     def __init__(self, price, volume, expiry_datetime, premium=0, style='us', stop_loss=None, take_profit=None, sensitivity=100, ratio=0.5):
 
-        # Keep consistent with the share class
-        self.price = price
-        self.volume = volume
-
-        # Calculate the sensitivity for both values
-        sen_sl = 2 * sensitivity * (1 - ratio)
-        sen_tp = 2 * sensitivity * ratio
-
-        # Check that the user has entered an SL or TP and adjust so that it fits the sensitivity
-        if stop_loss:
-            if price - stop_loss < sen_sl:
-                stop_loss = price - sen_sl
-
-        if take_profit:
-            if take_profit - price < sen_tp:
-                take_profit = price + sen_tp
+        # Initiate as in the Share class
+        super().__init__(price, volume, stop_loss, take_profit, sensitivity, ratio)
 
         # Additional extras that are specific to an option
         self.expiry_datetime = expiry_datetime
         self.premium = premium
         self.style = style
 
-        # Store the SL and TP
-        self.stop_loss = stop_loss
-        self.take_profit = take_profit
+        
 
 
-class OptionRecord:
+class OptionRecord(ShareRecord):
     '''
     Create a new option record to handle the users portfolio history for a given option. Takes 7 arguments:
 
@@ -126,10 +110,11 @@ class OptionRecord:
     See the docstring for the 'Option' class for information about the optional 'premium' and 'style' arguments.
     '''
     def __init__(self, entry_price, exit_price, volume, entry_datetime, expiry_datetime, premium=0, style='us'):
-        self.entry_price = entry_price
-        self.exit_price = exit_price
-        self.volume = volume
-        self.entry_datetime = entry_datetime
+
+        # Initiate as per the ShareRecord class
+        super().__init__(entry_price, exit_price, volume, entry_datetime)
+
+        # Store the arguments that are specific to options.
         self.expiry_datetime = expiry_datetime
         self.premium = premium
         self.style = style 
