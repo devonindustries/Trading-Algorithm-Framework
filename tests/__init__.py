@@ -1,1 +1,1 @@
-from test.test_portfolio import *
+from tests.test_portfolio import *

@@ -1,4 +1,5 @@
 from datetime import datetime
+from trading_algorithm_framework.validation import *
 
 import pandas as pd
 
@@ -16,14 +17,16 @@ class Point:
     - high_price : The high price for a given date.
     '''
     
-    def __init__(
-        self,
-        volume,
-        close_price,
-        open_price = None,
-        low_price = None,
-        high_price = None,
-    ):
+    def __init__(self, volume, close_price, open_price = None, low_price = None, high_price = None):
+        
+        # Validation
+        type_check(int, volume)
+        gt_zero(close_price)
+        if open_price != None: gt_zero(open_price)
+        if low_price != None: gt_zero(low_price)
+        if high_price != None: gt_zero(high_price)
+        
+        # Store all values
         self.volume = int(volume)
         self.close_price = float(close_price)
         self.open_price = float(open_price)
@@ -73,13 +76,12 @@ class Stock:
 
     def __init__(self, symbol, data, date_format='%Y-%m-%d'):
 
-        # Store the name of the stock
+        # Validation
+        type_check(str, symbol, date_format)
+        type_check(pd.DataFrame, data)
+
+        # Store all data
         self.set_symbol(symbol)
-
-        # Store the date format
-        self.set_date_format(date_format)
-
-        # Update the data frame
         self.update_history(data, date_format)
 
     #----------------
@@ -130,7 +132,7 @@ class Stock:
         for index, row in data.iterrows():
             
             # Convert the date so that it is a date object
-            new_date = datetime.strptime(index, date_format)
+            new_date = datetime.strptime(index, date_format) if type(index) == str else index
 
             # Define a new point
             new_point = Point(
