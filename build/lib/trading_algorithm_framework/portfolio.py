@@ -334,7 +334,7 @@ class Portfolio:
     # Declare a variable to store the users total exposure
     exposure = 0
     
-    # Declare another dictionary to hold the holdings percentages (based on exposure in the market)
+    # Declare another dictionary to hold the holdings percentages based on exposure in the market and the users portfolio balance
     __holdings = dict()
     
     #----------------
@@ -350,6 +350,9 @@ class Portfolio:
         # Set the balance
         self.balance = balance
 
+        # Set the holdings percentage
+        self.__calculate_stats()
+
         # Add the symbols if the user passed in a list
         if type(symbols) == list: 
             for symbol in symbols: 
@@ -363,12 +366,16 @@ class Portfolio:
         
         # Loop through the positions asset list
         for key in self.positions.keys():
-            self.balance += self.positions[key].returns
-            self.exposure += self.positions[key].exposure
+            if self.positions[key]:
+                self.balance += self.positions[key].returns
+                self.exposure += self.positions[key].exposure
             
         # Now that we have the total exposure, calculate the holdings percentage
         for key in self.positions.keys():
-            self.__holdings[key] = self.positions[key].exposure / self.exposure
+            self.__holdings[key] = self.positions[key].exposure / (self.exposure + self.balance)
+        
+        # Finally include the balance in the holdings
+        self.__holdings['portfolio'] = self.balance / (self.exposure + self.balance)
 
     def __check_share_type(self, asset_type, share):
 
