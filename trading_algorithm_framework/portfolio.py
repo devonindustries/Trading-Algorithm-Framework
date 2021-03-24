@@ -333,7 +333,10 @@ class Portfolio:
     
     # Declare a variable to store the users total exposure
     exposure = 0
-
+    
+    # Declare another dictionary to hold the holdings percentages (based on exposure in the market)
+    __holdings = dict()
+    
     #----------------
     # Built-in Methods
     #----------------
@@ -362,6 +365,10 @@ class Portfolio:
         for key in self.positions.keys():
             self.balance += self.positions[key].returns
             self.exposure += self.positions[key].exposure
+            
+        # Now that we have the total exposure, calculate the holdings percentage
+        for key in self.positions.keys():
+            self.__holdings[key] = self.positions[key].exposure / self.exposure
 
     def __check_share_type(self, asset_type, share):
 
@@ -374,19 +381,15 @@ class Portfolio:
             return False
 
     #----------------
-    # Public Methods
+    # Getters & Setters
     #----------------
 
-    def reset_balance(self, new_balance=50000): 
-        '''
-        Resets the user balance. Takes 1 argument:
+    def get_holdings(self):
+        return self.__holdings
 
-        - new_balance (optional) : Set to 50 000 by default.
-        '''
-
-        # Set the balance
-        self.balance = new_balance
-
+    #----------------
+    # Public Methods
+    #----------------
 
     def add_symbol(self, symbol, overwrite=False):
         '''
@@ -407,6 +410,17 @@ class Portfolio:
 
             # Remove the item
             self.positions.pop(symbol)
+            
+            
+    def reset_balance(self, new_balance=50000): 
+        '''
+        Resets the user balance. Takes 1 argument:
+
+        - new_balance (optional) : Set to 50 000 by default.
+        '''
+
+        # Set the balance
+        self.balance = new_balance
 
     #----------------
     # Buying & Selling
