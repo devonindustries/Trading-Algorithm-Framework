@@ -1,3 +1,6 @@
+from datetime import datetime
+from trading_algorithm_framework.validation import *
+
 #----------------
 # Data Structures
 #----------------
@@ -19,7 +22,11 @@ class Share:
     #----------------
     
     def __init__(self, price, volume, stop_loss=None, take_profit=None, sensitivity=100, ratio=0.5):
-
+        
+        # Validation
+        type_check(int, volume)
+        gt_zero(price, volume, sensitivity, ratio)
+        
         # Store the stock price and volume
         self.price = price
         self.volume = volume
@@ -29,11 +36,13 @@ class Share:
         sen_tp = 2 * sensitivity * ratio
 
         # Check that the user has entered an SL or TP and adjust so that it fits the sensitivity
-        if stop_loss:
+        if stop_loss != None:
+            gt_zero(stop_loss)
             if price - stop_loss < sen_sl:
                 stop_loss = price - sen_sl
 
-        if take_profit:
+        if take_profit != None:
+            gt_zero(take_profit)
             if take_profit - price < sen_tp:
                 take_profit = price + sen_tp
 
@@ -57,6 +66,13 @@ class ShareRecord:
     #----------------
 
     def __init__(self, entry_price, exit_price, volume, entry_datetime):
+        
+        # Validation
+        type_check(datetime, entry_datetime)
+        type_check(int, volume)
+        gt_zero(entry_price, exit_price, volume)
+        
+        # Store values
         self.entry_price = entry_price
         self.exit_price = exit_price
         self.volume = volume
@@ -68,8 +84,8 @@ class Option(Share):
     Create a new option order for a stock that can be added to the users portfolio. Inherits from the Share class, and takes 9 arguments:
 
     - price : The strike price for the option;
-    - expiry_datetime : The datetime object associated with the expiration date of the stock;
     - volume : The number of options contracts that the user wishes to enter. One contract equates to 100 shares;
+    - expiry_datetime : The datetime object associated with the expiration date of the stock;
     - premium (optional) : The premium that the user pays for the call, or recieves for the put. Set to zero by default;
     - style (optional) : The type of option that the user is trading with. Takes two possible values:
         - 'us' : (default) American style option;
@@ -88,13 +104,16 @@ class Option(Share):
 
         # Initiate as in the Share class
         super().__init__(price, volume, stop_loss, take_profit, sensitivity, ratio)
+        
+        # Validation
+        type_check(datetime, expiry_datetime)
+        type_check(str, style)
+        gt_zero(premium)
 
         # Additional extras that are specific to an option
         self.expiry_datetime = expiry_datetime
         self.premium = premium
         self.style = style
-
-        
 
 
 class OptionRecord(ShareRecord):
@@ -114,6 +133,11 @@ class OptionRecord(ShareRecord):
         # Initiate as per the ShareRecord class
         super().__init__(entry_price, exit_price, volume, entry_datetime)
 
+        # Validation
+        type_check(datetime, expiry_datetime)
+        type_check(str, style)
+        gt_zero(premium)
+    
         # Store the arguments that are specific to options.
         self.expiry_datetime = expiry_datetime
         self.premium = premium
@@ -147,6 +171,7 @@ class Asset:
     #----------------
 
     def __init__(self):
+        
         # Set the users exposure and returns to zero
         self.exposure = 0
         self.returns = 0
@@ -218,10 +243,10 @@ class Asset:
     def __clean_positions(self):
 
         # Check that all stocks with volume 0 have been removed
-        for pos_type in positions.keys():
-            for date_key in positions[pos_type].keys():
-                if positions[pos_type][date_key].volume == 0:
-                    positions[pos_type].pop(date_key)
+        for pos_type in self.positions.keys():
+            for date_key in self.positions[pos_type].keys():
+                if self.positions[pos_type][date_key].volume == 0:
+                    self.positions[pos_type].pop(date_key)
 
     #----------------
     # Public Methods
@@ -233,6 +258,11 @@ class Asset:
         # Append the new share in the relevant list
         self.positions[asset_type][entry_datetime] = share
 
+        # Clear out any unwanted data in the positions dictionary
+        self.__clean_positions()
+
+        # Calculate the new statistics
+        self.__calculate_stats()        
 
     # Leave a position with a stock or option
     def leave_position(self, asset_type, current_price, volume, entry_datetime, exit_datetime):
@@ -300,12 +330,24 @@ class Portfolio:
 
     # Declare a dictionary for each desired symbol
     positions = dict()
-
+    
+    # Declare a variable to store the users total exposure
+    exposure = 0
+    
+    # Declare another dictionary to hold the holdings percentages (based on exposure in the market)
+    __holdings = dict()
+    
     #----------------
     # Built-in Methods
     #----------------
 
     def __init__(self, balance=50000, symbols=None):
+        
+        # Validation
+        if symbols: type_check(str, symbols)
+        gt_zero(balance)
+        
+        # Set the balance
         self.balance = balance
 
         # Add the symbols if the user passed in a list
@@ -316,6 +358,17 @@ class Portfolio:
     #----------------
     # Private Methods
     #----------------
+
+    def __calculate_stats(self):
+        
+        # Loop through the positions asset list
+        for key in self.positions.keys():
+            self.balance += self.positions[key].returns
+            self.exposure += self.positions[key].exposure
+            
+        # Now that we have the total exposure, calculate the holdings percentage
+        for key in self.positions.keys():
+            self.__holdings[key] = self.positions[key].exposure / self.exposure
 
     def __check_share_type(self, asset_type, share):
 
@@ -328,19 +381,15 @@ class Portfolio:
             return False
 
     #----------------
-    # Public Methods
+    # Getters & Setters
     #----------------
 
-    def reset_balance(self, new_balance=50000): 
-        '''
-        Resets the user balance. Takes 1 argument:
+    def get_holdings(self):
+        return self.__holdings
 
-        - new_balance (optional) : Set to 50 000 by default.
-        '''
-
-        # Set the balance
-        self.balance = new_balance
-
+    #----------------
+    # Public Methods
+    #----------------
 
     def add_symbol(self, symbol, overwrite=False):
         '''
@@ -361,8 +410,22 @@ class Portfolio:
 
             # Remove the item
             self.positions.pop(symbol)
+            
+            
+    def reset_balance(self, new_balance=50000): 
+        '''
+        Resets the user balance. Takes 1 argument:
 
-    
+        - new_balance (optional) : Set to 50 000 by default.
+        '''
+
+        # Set the balance
+        self.balance = new_balance
+
+    #----------------
+    # Buying & Selling
+    #----------------
+     
     def buy(self, symbol, asset_type, share, entry_datetime):
         '''
         Enters a position. Takes 4 arguments:
@@ -382,13 +445,16 @@ class Portfolio:
 
         # Add the symbol if it doesn't exist
         self.add_symbol(symbol)
-
+        
         # Purchase a position in that stock
         self.positions[symbol].enter_position(
             asset_type,
             share,
             entry_datetime
         )
+        
+        # Calculate the statistics for the portfolio
+        self.__calculate_stats()
 
     def sell(self, symbol, asset_type, current_price, volume, entry_datetime, exit_datetime):
         '''
@@ -420,10 +486,13 @@ class Portfolio:
             entry_datetime,
             exit_datetime
         )
+        
+        # Calculate the statistics for the portfolio
+        self.__calculate_stats()
 
     def sell_all(self, symbol, asset_type, current_price, exit_datetime):
         '''
-        Leaves all positions. Takes 4 arguments:
+        Leaves all positions of a given flavour for a given 'Asset' class instance. Takes 4 arguments:
 
         - symbol : The symbol of the asset being sold;
         - asset_type : The type of position the user wishes to leave. Takes 2 possible values:
@@ -449,4 +518,7 @@ class Portfolio:
                 self.positions[symbol].positions[date_key].volume,
                 date_key,
                 exit_datetime
-            )        
+            )
+            
+        # Calculate the statistics for the portfolio
+        self.__calculate_stats()
