@@ -35,7 +35,7 @@ class Point:
 # Define a class to store an actual stock with all of its data
 class Stock:
     '''
-    Describes an asset and contains all of its data between any two dates.
+    Describes an asset and contains all of its data between any two dates. Use this class definition for trading stocks, ETFs, and options.
 
     Takes 3 arguments:
 
@@ -148,7 +148,3 @@ class Stock:
 
         # Store the dataframe as its own object
         self.history_df = data
-
-# Define a class to handle indices (this will be properly implemented later)
-class Index:
-    pass
