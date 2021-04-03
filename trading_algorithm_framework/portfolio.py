@@ -252,7 +252,7 @@ class Portfolio:
             return type(share) == Share
         elif asset_type in ['call', 'put']:
             return type(share) == Option
-        elif: asset_type in ['currency']:
+        elif asset_type in ['currency']:
             return type(share) == Quote
         else:
             return False

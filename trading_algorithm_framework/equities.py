@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from trading_algorithm_framework.validation import *
+
 #----------------
 # Stocks
 #----------------
