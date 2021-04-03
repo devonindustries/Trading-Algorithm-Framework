@@ -130,8 +130,7 @@ class StockAsset:
         stored_volume = positions[asset_type][entry_datetime].volume
 
         # Return if the volume is negative
-        if volume <= 0:
-            return
+        if volume <= 0: return
 
         # If the volume is less than the volume stored, deduct the correct volume
         elif volume < stored_volume:
@@ -257,6 +256,16 @@ class Portfolio:
         else:
             return False
 
+    def __point_to_share(point, volume, stop_loss=None, take_profit=None, sensitivity=100, ratio=0.5):
+        return Share(
+            point.close_price,
+            volume,
+            stop_loss,
+            take_profit
+            sensitivity
+            ratio
+        )
+
     #----------------
     # Getters & Setters
     #----------------
@@ -303,34 +312,67 @@ class Portfolio:
     # Buying & Selling
     #----------------
      
-    def buy(self, symbol, asset_type, share, entry_datetime):
+    def buy(self, stock, asset_type, entry_datetime, volume, stop_loss=None, take_profit=None, expiry_datetime=None, premium=0, style='us'):
         '''
-        Enters a position. Takes 4 arguments:
+        Enters a position. Takes 9 arguments:
 
-        - symbol : The stock symbol that the user is buying stock with;
+        - stock : The instance of the stock class that the user is investing in;
         - asset_type : The type of position that the user wishes to enter. Takes 4 possible values:
             - 'long' : Enter a long position;
             - 'short' : Enter a short position;
             - 'call' : Enter a call option;
             - 'put' : Enter a put option.
-        - share : An instance of the share / option class that the user is entering the position with;
         - entry_datetime : The datetime object associated with the time the position was entered.
+        - volume : The number of stocks that the user wishes to purchase;
+        - stop_loss (optional) : The stop loss for the stock;
+        - take_profit (optional) : The take profit for the stock;
+        
+        SPECIFIC TO OPTIONS STOCKS ONLY!
+        
+        - expiry_datetime : The datetime object associated with the options expiration;
+        - premium (optional) : The premium for the given option;
+        - style (option) : 'us' or 'eu' styled option.
         '''
 
-        # Validation for asset type and share type
-        if not(self.__check_share_type(asset_type, share)): return
+        # Set the symbol to be referred to later
+        symbol = stock.get_symbol()
 
-        # Add the symbol if it doesn't exist
-        self.add_symbol(symbol)
+        # Store the equity in question
+        equity = None
+
+        # Check what type of asset the user needs to purchase
+        if asset_type in ['long', 'short']:
+            equity = Share(
+                stock.history[entry_datetime].close_price,
+                volume,
+                stop_loss,
+                take_profit
+            )
+        elif asset_type in ['call', 'put']:
+            equity = Option(
+                stock.history[entry_datetime].close_price,
+                volume,
+                expiry_datetime,
+                premium,
+                style,
+                stop_loss,
+                take_profit
+            )
         
+        # If the equity failed to populate, then prompt the user
+        if not(equity): raise RuntimeError(f'Asset type {asset_type} is not recognised!') from None
+
+        # Add the symbol if it does not exist
+        self.add_symbol(symbol)
+
         # Purchase a position in that stock
         self.positions[symbol].enter_position(
             asset_type,
-            share,
+            equity,
             entry_datetime
         )
-        
-        # Calculate the statistics for the portfolio
+
+        # Calculate the statistics
         self.__calculate_stats()
 
     def sell(self, symbol, asset_type, current_price, volume, entry_datetime, exit_datetime):
@@ -348,59 +390,25 @@ class Portfolio:
         - entry_datetime : The datetime object associated with the time that the position was entered;
         - exit_datetime : The datetime object associated with the time that the position is being sold.
         '''
+
+        # NEED TO REWRITE THE SELL METHOD SO THAT IT MATCHES THE BUY METHOD
+
+        # # Check that the symbol actually exists
+        # if not(symbol in self.positions.keys()): return
         
-        # Validation for asset type and share type
-        if not(self.__check_share_type(asset_type, share)): return
+        # # Check that the user isn't trying to leave a european styled option prematurely
+        # if asset_type in ['call', 'put']:
+        #     option = self.positions[symbol].positions[asset_type][entry_datetime]
+        #     if option.style == 'eu' and option.expiry_datetime != exit_datetime: return
 
-        # Check that the symbol actually exists
-        if not(symbol in self.positions.keys()): return
+        # # Sell the position for that symbol
+        # self.positions[symbol].leave_position(
+        #     asset_type,
+        #     current_price,
+        #     volume,
+        #     entry_datetime,
+        #     exit_datetime
+        # )
         
-        # Check that the user isn't trying to leave a european styled option prematurely
-        if asset_type in ['call', 'put']:
-            option = self.positions[symbol].positions[asset_type][entry_datetime]
-            if option.style == 'eu' and option.expiry_datetime != exit_datetime: return
-
-        # Sell the position for that symbol
-        self.positions[symbol].leave_position(
-            asset_type,
-            current_price,
-            volume,
-            entry_datetime,
-            exit_datetime
-        )
-        
-        # Calculate the statistics for the portfolio
-        self.__calculate_stats()
-
-    def sell_all(self, symbol, asset_type, current_price, exit_datetime):
-        '''
-        Leaves all positions of a given flavour for a given 'Asset' class instance. Takes 4 arguments:
-
-        - symbol : The symbol of the asset being sold;
-        - asset_type : The type of position the user wishes to leave. Takes 2 possible values:
-            - 'long' : Leave a long position;
-            - 'short' : Leave a short position;
-            - 'call' : Leave a call option;
-            - 'put' : Leave a put option.
-        - current_price : The current price of the stock;
-        - exit_datetime : The datetime object associated with the time that the position is being sold.
-        '''
-        
-        # Validation for asset type and share type
-        if not(self.__check_share_type(asset_type, share)): return
-
-        # Check that the symbol actually exists
-        if not(symbol in self.positions.keys()): return
-
-        # Sell all of the positions by looping through all of the existing datetime identifiers
-        for date_key in self.positions[symbol].positions.keys():
-            self.positions[symbol].leave_position(
-                asset_type,
-                current_price,
-                self.positions[symbol].positions[date_key].volume,
-                date_key,
-                exit_datetime
-            )
-            
-        # Calculate the statistics for the portfolio
-        self.__calculate_stats()
+        # # Calculate the statistics for the portfolio
+        # self.__calculate_stats()
