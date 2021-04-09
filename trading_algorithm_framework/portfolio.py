@@ -322,10 +322,10 @@ class Portfolio:
             - 'short' : Enter a short position;
             - 'call' : Enter a call option;
             - 'put' : Enter a put option.
-        - entry_datetime : The datetime object associated with the time the position was entered.
+        - entry_datetime : The datetime object associated with the time the position was entered;
         - volume : The number of stocks that the user wishes to purchase;
         - stop_loss (optional) : The stop loss for the stock;
-        - take_profit (optional) : The take profit for the stock;
+        - take_profit (optional) : The take profit for the stock.
         
         SPECIFIC TO OPTIONS STOCKS ONLY!
         
@@ -358,6 +358,7 @@ class Portfolio:
                 stop_loss,
                 take_profit
             )
+        else return
         
         # If the equity failed to populate, then prompt the user
         if not(equity): raise RuntimeError(f'Asset type {asset_type} is not recognised!') from None
@@ -375,40 +376,76 @@ class Portfolio:
         # Calculate the statistics
         self.__calculate_stats()
 
-    def sell(self, symbol, asset_type, current_price, volume, entry_datetime, exit_datetime):
+    def sell(self, stock, asset_type, entry_datetime, exit_datetime, volume):
         '''
-        Leaves a position. Takes 6 arguments:
+        Leaves a position. Takes 5 arguments:
 
-        - symbol : The symbol of the asset being sold;
-        - asset_type : The type of position the user wishes to leave. Takes 2 possible values:
+        - stock : The instance of the stock class that the user is pulling out of;
+        - asset_type : The type of position that the user wishes to leave. Takes 4 possible values:
             - 'long' : Leave a long position;
             - 'short' : Leave a short position;
             - 'call' : Leave a call option;
             - 'put' : Leave a put option.
-        - current_price : The current price of the stock;
-        - volume : The volume of stock that the user wishes to sell.
-        - entry_datetime : The datetime object associated with the time that the position was entered;
-        - exit_datetime : The datetime object associated with the time that the position is being sold.
+        - entry_datetime : The datetime object associated with the time the position was entered;
+        - exit_datetime : The datetime object associated with the time the position was pulled out of;
+        - volume : The number of positions that the user wishes to sell.
         '''
 
-        # NEED TO REWRITE THE SELL METHOD SO THAT IT MATCHES THE BUY METHOD
-
-        # # Check that the symbol actually exists
-        # if not(symbol in self.positions.keys()): return
+        # Get the symbol
+        symbol = stock.get_symbol()
         
-        # # Check that the user isn't trying to leave a european styled option prematurely
-        # if asset_type in ['call', 'put']:
-        #     option = self.positions[symbol].positions[asset_type][entry_datetime]
-        #     if option.style == 'eu' and option.expiry_datetime != exit_datetime: return
+        # Check that the user isn't trying to leave a european styled option prematurely
+        if asset_type in ['call', 'put']:
+            option = self.positions[symbol].positions[asset_type][entry_datetime]
+            if option.style == 'eu' and option.expiry_datetime != exit_datetime: return
 
-        # # Sell the position for that symbol
-        # self.positions[symbol].leave_position(
-        #     asset_type,
-        #     current_price,
-        #     volume,
-        #     entry_datetime,
-        #     exit_datetime
-        # )
+        # Get the current price
+        current_price = stock.history[exit_datetime]['close']
+
+        # Sell the position for that symbol
+        self.positions[symbol].leave_position(
+            asset_type,
+            current_price,
+            volume,
+            entry_datetime,
+            exit_datetime
+        )
         
-        # # Calculate the statistics for the portfolio
-        # self.__calculate_stats()
+        # Calculate the statistics for the portfolio
+        self.__calculate_stats()
+
+        def sell_all(self, stock, asset_type, exit_datetime):
+            '''
+            Sell all positions for a given asset type. Takes 3 arguments:
+
+            - stock : The instance of the stock class that the user is pulling out of;
+            - asset_type : The type of position that the user wishes to leave. Takes 4 possible values:
+                - 'long' : Leave a long position;
+                - 'short' : Leave a short position;
+                - 'call' : Leave a call option;
+                - 'put' : Leave a put option;
+                - 'all' : Leave every position entered.
+            - exit_datetime : The datetime object associated with the time the position was pulled out of.
+            '''
+            
+            # Get the stock symbol
+            symbol = stock.get_symbol()
+
+            # Check which asset type we are dealing with
+            if asset_type in ['long', 'short', 'call', 'put']:
+
+                # Loop for each datetime object in the StockAsset instance
+                for entry_datetime in self.positions[symbol].positions.keys():
+
+                    # Get the maximum volume
+                    volume = self.positions[symbol].positions[entry_datetime].volume
+
+                    # Sell the object
+                    self.sell(stock, asset_type, entry_datetime, exit_datetime, volume)
+
+            elif asset_type == 'all':
+
+                # Recursively call this method for all asset types
+                for asset_type in ['long', 'short', 'call', 'put']:
+                     
+                    self.sell_all(stock, asset_type, exit_datetime)

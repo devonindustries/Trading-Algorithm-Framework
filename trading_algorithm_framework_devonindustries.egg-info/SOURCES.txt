@@ -1,8 +1,11 @@
+LICENSE
 README.md
 setup.py
 tests/__init__.py
 tests/test_portfolio.py
 trading_algorithm_framework/__init__.py
+trading_algorithm_framework/algorithm.py
+trading_algorithm_framework/equities.py
 trading_algorithm_framework/portfolio.py
 trading_algorithm_framework/stock.py
 trading_algorithm_framework/validation.py

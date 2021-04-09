@@ -20,4 +20,4 @@ def type_check(dtype, *args):
     '''
     if len(args) != 0:
         for arg in args:
-            if type(arg) != dtype: raise TypeError(f'Value {arg} must be of type {dtype}!')
+            if type(arg) != dtype: raise TypeError(f'Value {arg} must be of type {dtype}!') from None
