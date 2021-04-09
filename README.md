@@ -34,27 +34,9 @@ aapl_stock = Stock(‘AAPL’, aapl_data)
 Now with the `Stock` class defined, we can enter and exit different positions. The stock class uses instances of the ‘Point’ class to store each data point, so any time we want to enter a position we will need to convert one of them to an instance of either the `Share` or `Option` classes.
 
 ```
-def point_to_share(point, volume):
-	return Share(
-		point.close_price,
-		volume
-	)
+entry_datetime = aapl_data.history.keys()[0]
 
-# Select the first date in the pack
-purchase_date = aapl_data.index[0]
-
-new_share = point_to_share(
-	aapl_stock.history[purchase_date],
-	1
-)
-
-# Enter a long position
-pf.buy(
-	aapl_stock.get_symbol(),
-	‘long’,
-	new_share,
-	purchase_date
-)
+pf.buy(aapl_stock, 'long', entry_datetime, 10)
 ```
 
 Now that we’ve entered a long position, we can check the portfolio `balance`, as well as its open positions, exposure, and its percentage holdings in each stock (which is accessed using `get_holdings()`).
