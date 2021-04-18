@@ -414,38 +414,38 @@ class Portfolio:
         # Calculate the statistics for the portfolio
         self.__calculate_stats()
 
-        def sell_all(self, stock, asset_type, exit_datetime):
-            '''
-            Sell all positions for a given asset type. Takes 3 arguments:
+    def sell_all(self, stock, asset_type, exit_datetime):
+        '''
+        Sell all positions for a given asset type. Takes 3 arguments:
 
-            - stock : The instance of the stock class that the user is pulling out of;
-            - asset_type : The type of position that the user wishes to leave. Takes 4 possible values:
-                - 'long' : Leave a long position;
-                - 'short' : Leave a short position;
-                - 'call' : Leave a call option;
-                - 'put' : Leave a put option;
-                - 'all' : Leave every position entered.
-            - exit_datetime : The datetime object associated with the time the position was pulled out of.
-            '''
-            
-            # Get the stock symbol
-            symbol = stock.get_symbol()
+        - stock : The instance of the stock class that the user is pulling out of;
+        - asset_type : The type of position that the user wishes to leave. Takes 4 possible values:
+            - 'long' : Leave a long position;
+            - 'short' : Leave a short position;
+            - 'call' : Leave a call option;
+            - 'put' : Leave a put option;
+            - 'all' : Leave every position entered.
+        - exit_datetime : The datetime object associated with the time the position was pulled out of.
+        '''
+        
+        # Get the stock symbol
+        symbol = stock.get_symbol()
 
-            # Check which asset type we are dealing with
-            if asset_type in ['long', 'short', 'call', 'put']:
+        # Check which asset type we are dealing with
+        if asset_type in ['long', 'short', 'call', 'put']:
 
-                # Loop for each datetime object in the StockAsset instance
-                for entry_datetime in self.positions[symbol].positions.keys():
+            # Loop for each datetime object in the StockAsset instance
+            for entry_datetime in self.positions[symbol].positions.keys():
 
-                    # Get the maximum volume
-                    volume = self.positions[symbol].positions[entry_datetime].volume
+                # Get the maximum volume
+                volume = self.positions[symbol].positions[entry_datetime].volume
 
-                    # Sell the object
-                    self.sell(stock, asset_type, entry_datetime, exit_datetime, volume)
+                # Sell the object
+                self.sell(stock, asset_type, entry_datetime, exit_datetime, volume)
 
-            elif asset_type == 'all':
+        elif asset_type == 'all':
 
-                # Recursively call this method for all asset types
-                for asset_type in ['long', 'short', 'call', 'put']:
-                     
-                    self.sell_all(stock, asset_type, exit_datetime)
+            # Recursively call this method for all asset types
+            for asset_type in ['long', 'short', 'call', 'put']:
+                
+                self.sell_all(stock, asset_type, exit_datetime)
