@@ -8,7 +8,15 @@ def gt_zero(*args):
     '''
     if len(args) != 0:
         for arg in args:
-            if arg <= 0: raise ValueError(f'Value {arg} must be strictly greater than zero!') from None           
+            if arg <= 0: raise ValueError(f'Value {arg} must be strictly greater than zero!') from None
+
+def gte_zero(*args):
+    '''
+    Check that passed in arguments are greater than or equal to zero
+    '''
+    if len(args) != 0:
+        for arg in args:
+            if arg <= 0: raise ValueError(f'Value {arg} must be strictly greater than zero!') from None          
 
 #----------------
 # Type Validation

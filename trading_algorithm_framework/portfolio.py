@@ -203,6 +203,9 @@ class Portfolio:
     
     # Declare another dictionary to hold the holdings percentages based on exposure in the market and the users portfolio balance
     __holdings = dict()
+
+    # Declare a list of valid asset types
+    __asset_types = ['long', 'short', 'call', 'put', 'currency']
     
     #----------------
     # Built-in Methods
@@ -211,8 +214,9 @@ class Portfolio:
     def __init__(self, balance=50000, symbols=None):
         
         # Validation
-        if symbols: type_check(str, symbols)
         gt_zero(balance)
+
+        if symbols: type_check(str, symbols)
         
         # Set the balance
         self.balance = balance
@@ -243,28 +247,6 @@ class Portfolio:
         
         # Finally include the balance in the holdings
         self.__holdings['portfolio'] = self.balance / (self.exposure + self.balance)
-
-    def __check_share_type(self, asset_type, share):
-
-        # Check that the share instance matches the expected class type
-        if asset_type in ['long', 'short']:
-            return type(share) == Share
-        elif asset_type in ['call', 'put']:
-            return type(share) == Option
-        elif asset_type in ['currency']:
-            return type(share) == Quote
-        else:
-            return False
-
-    def __point_to_share(point, volume, stop_loss=None, take_profit=None, sensitivity=100, ratio=0.5):
-        return Share(
-            point.close_price,
-            volume,
-            stop_loss,
-            take_profit
-            sensitivity
-            ratio
-        )
 
     #----------------
     # Getters & Setters
@@ -312,20 +294,20 @@ class Portfolio:
     # Buying & Selling
     #----------------
      
-    def buy(self, stock, asset_type, entry_datetime, volume, stop_loss=None, take_profit=None, expiry_datetime=None, premium=0, style='us'):
+    def buy(self, market_object, asset_type, entry_datetime, volume, stop_loss=None, take_profit=None, expiry_datetime=None, premium=0, style='us'):
         '''
         Enters a position. Takes 9 arguments:
 
-        - stock : The instance of the stock class that the user is investing in;
+        - market_object : The instance of the MarketObject class that the user is investing in;
         - asset_type : The type of position that the user wishes to enter. Takes 4 possible values:
             - 'long' : Enter a long position;
             - 'short' : Enter a short position;
             - 'call' : Enter a call option;
             - 'put' : Enter a put option.
         - entry_datetime : The datetime object associated with the time the position was entered;
-        - volume : The number of stocks that the user wishes to purchase;
-        - stop_loss (optional) : The stop loss for the stock;
-        - take_profit (optional) : The take profit for the stock.
+        - volume : The number of market objects that the user wishes to purchase;
+        - stop_loss (optional) : The stop loss for the market object;
+        - take_profit (optional) : The take profit for the market object.
         
         SPECIFIC TO OPTIONS STOCKS ONLY!
         
@@ -335,22 +317,22 @@ class Portfolio:
         '''
 
         # Set the symbol to be referred to later
-        symbol = stock.get_symbol()
+        symbol = market_object.get_symbol()
 
         # Store the equity in question
         equity = None
 
         # Check what type of asset the user needs to purchase
-        if asset_type in ['long', 'short']:
+        if asset_type in self.__asset_types[:2]:
             equity = Share(
-                stock.history[entry_datetime].close_price,
+                market_object.history[entry_datetime].close_price,
                 volume,
                 stop_loss,
                 take_profit
             )
-        elif asset_type in ['call', 'put']:
+        elif asset_type in self.__asset_types[2:4]:
             equity = Option(
-                stock.history[entry_datetime].close_price,
+                market_object.history[entry_datetime].close_price,
                 volume,
                 expiry_datetime,
                 premium,
@@ -366,7 +348,7 @@ class Portfolio:
         # Add the symbol if it does not exist
         self.add_symbol(symbol)
 
-        # Purchase a position in that stock
+        # Purchase a position in that market object
         self.positions[symbol].enter_position(
             asset_type,
             equity,
@@ -376,11 +358,11 @@ class Portfolio:
         # Calculate the statistics
         self.__calculate_stats()
 
-    def sell(self, stock, asset_type, entry_datetime, exit_datetime, volume):
+    def sell(self, market_object, asset_type, entry_datetime, exit_datetime, volume):
         '''
         Leaves a position. Takes 5 arguments:
 
-        - stock : The instance of the stock class that the user is pulling out of;
+        - market_object : The instance of the MarketObject class that the user is pulling out of;
         - asset_type : The type of position that the user wishes to leave. Takes 4 possible values:
             - 'long' : Leave a long position;
             - 'short' : Leave a short position;
@@ -392,15 +374,15 @@ class Portfolio:
         '''
 
         # Get the symbol
-        symbol = stock.get_symbol()
+        symbol = market_object.get_symbol()
         
         # Check that the user isn't trying to leave a european styled option prematurely
-        if asset_type in ['call', 'put']:
+        if asset_type in self.__asset_types[2:4]:
             option = self.positions[symbol].positions[asset_type][entry_datetime]
             if option.style == 'eu' and option.expiry_datetime != exit_datetime: return
 
         # Get the current price
-        current_price = stock.history[exit_datetime]['close']
+        current_price = market_object.history[exit_datetime]['close']
 
         # Sell the position for that symbol
         self.positions[symbol].leave_position(
@@ -414,11 +396,11 @@ class Portfolio:
         # Calculate the statistics for the portfolio
         self.__calculate_stats()
 
-    def sell_all(self, stock, asset_type, exit_datetime):
+    def sell_all(self, market_object, asset_type, exit_datetime):
         '''
         Sell all positions for a given asset type. Takes 3 arguments:
 
-        - stock : The instance of the stock class that the user is pulling out of;
+        - market_object : The instance of the MarketObject class that the user is pulling out of;
         - asset_type : The type of position that the user wishes to leave. Takes 4 possible values:
             - 'long' : Leave a long position;
             - 'short' : Leave a short position;
@@ -428,11 +410,11 @@ class Portfolio:
         - exit_datetime : The datetime object associated with the time the position was pulled out of.
         '''
         
-        # Get the stock symbol
-        symbol = stock.get_symbol()
+        # Get the market object symbol
+        symbol = market_object.get_symbol()
 
-        # Check which asset type we are dealing with
-        if asset_type in ['long', 'short', 'call', 'put']:
+        # Check which asset type we are dealing with, excluding currencies (FOR NOW!)
+        if asset_type in self.__asset_types[0:4]:
 
             # Loop for each datetime object in the StockAsset instance
             for entry_datetime in self.positions[symbol].positions.keys():
@@ -441,11 +423,11 @@ class Portfolio:
                 volume = self.positions[symbol].positions[entry_datetime].volume
 
                 # Sell the object
-                self.sell(stock, asset_type, entry_datetime, exit_datetime, volume)
+                self.sell(market_object, asset_type, entry_datetime, exit_datetime, volume)
 
         elif asset_type == 'all':
 
-            # Recursively call this method for all asset types
-            for asset_type in ['long', 'short', 'call', 'put']:
+            # Recursively call this method for all stock asset types
+            for asset_type in self.__asset_types[0:4]:
                 
-                self.sell_all(stock, asset_type, exit_datetime)
+                self.sell_all(market_object, asset_type, exit_datetime)

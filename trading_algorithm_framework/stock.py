@@ -4,14 +4,14 @@ from trading_algorithm_framework.validation import *
 
 import pandas as pd
 
-# Define a class to store the data for any given point on the stock chart.
+
 class Point:
     '''
-    Describes a point on the stock chart. Used by the Stock class.
+    Describes a point on the stock chart. Used by the MarketObject class.
 
     Takes 5 arguments:
 
-    - volume : The number of stocks that were sold on a given date;
+    - volume : The number of the item that were sold on a given date;
     - close_price : The closing price for a given date;
     - open_price : The opening price for a given date;
     - low_price : The low price for a given date;
@@ -28,27 +28,27 @@ class Point:
         if low_price != None: gt_zero(low_price)
         if high_price != None: gt_zero(high_price)
         
-        # Store all values
+        # Store all values, and convert them appropriately
         self.volume = int(volume)
         self.close_price = float(close_price)
         self.open_price = float(open_price)
         self.high_price = float(high_price)
 
-# Define a class to store an actual stock with all of its data
-class Stock:
+
+class MarketObject:
     '''
-    Describes an asset and contains all of its data between any two dates. Use this class definition for trading stocks, ETFs, and options.
+    Describes a market object and contains all of its data between any two dates. Use this class definition for trading Stocks, ETFs, and Currencies.
 
     Takes 3 arguments:
 
     - symbol : The symbol representing the asset;
     - data : A pandas dataframe holding all of the stock information. Explicitly, this dataframe must have column names:
         - date (index) : Each of the dates takes the format of 'date_format'
-        - volume
-        - close
-        - open
-        - low
-        - high
+        - volume : The number of trades that occured on any given day;
+        - close : The closing price for a given market object on a given day;
+        - open : The opening price for a given market object on a given day;
+        - low : The minimum price that a given market object sold for on a given day;
+        - high : The maximum price that a given market object sold for on a given day.
     - date_format (optional) : Denotes the arrangement of the dates. Set to '%Y-%m-%d' by default.
     '''
 
@@ -59,7 +59,7 @@ class Stock:
     # Declare a variable for checkign the headings
     __headings = ['volume', 'close', 'open', 'low', 'high']
 
-    # Declare the name of the stock
+    # Declare the name of the ticker
     __symbol = None
 
     #----------------
@@ -130,7 +130,7 @@ class Stock:
         if not(self.__verify_headings(data.columns)): 
             raise ValueError('Headings do not line up!') from None
         
-        # Store each point for the stock
+        # Store each point for the market object
         for index, row in data.iterrows():
             
             # Convert the date so that it is a date object
