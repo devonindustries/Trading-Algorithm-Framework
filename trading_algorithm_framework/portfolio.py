@@ -177,10 +177,59 @@ class StockAsset:
     
 class CurrencyAsset:
     '''
-    Create a new instance of the Currency Asset class to handle purchasing currencies. This will utilize instances of the future 'Quote' class.
+    Create a new instance of the Currency Asset class to handle purchasing currencies. This will utilize instances of the 'Quote' class.
     '''
-    pass
+    
+    # The positions that the user has entered
+    positions, history = [{
+        
+        # Define dictionaries to hold long and short positions for a currency object
+        'long' : dict(),
+        'short' : dict()
+        
+    } for x in range(2)]
+    
+    #----------------
+    # Built-in Methods
+    #----------------
 
+    def __init__(self):
+        
+        # Set the exposure and returns
+        self.exposure = 0
+        self.returns = 0
+        
+    #----------------
+    # Private Methods
+    #----------------
+    
+    def __calculate_stats(self):
+        
+        # Reset the exposure first
+        self.exposure = 0
+        
+        long_ = self.positions['long']
+        short_ = self.positions['short']
+        
+        # Calculate the exposure based on the long and short positions
+        for key in long_:
+            self.exposure += long_[key].exchange_rate * long_[key].volume
+            
+        for key in short_:
+            self.exposure -= short_[key].exchange_rate * short_[key].volume
+            
+        # Calculate the returns based on the history of the currency traded
+        long_ = self.history['long']
+        short_ = self.history['short']
+
+        for key in long_:
+            self.returns += long_[key].exit_rate * long_[key].volume
+
+        for key in short_:
+            self.returns += (short_[key].entry_rate - short_[key].exit_rate) * short_[key].volume
+            
+    
+        
 #----------------
 # Portfolio Class
 #----------------
