@@ -229,6 +229,18 @@ class CurrencyAsset:
             self.returns += (short_[key].entry_rate - short_[key].exit_rate) * short_[key].volume
             
     
+    def __clean_positions(self):
+
+        # Check that all currencies with volume 0 have been removed
+        for pos_type in self.positions.keys():
+            for date_key in self.positions[pos_type].keys():
+                if self.positions[pos_type][date_key].volume == 0:
+                    self.positions[pos_type].pop(date_key)
+    
+    def enter_position(self):
+        
+        # Enter a new position
+        
         
 #----------------
 # Portfolio Class
@@ -352,7 +364,8 @@ class Portfolio:
             - 'long' : Enter a long position;
             - 'short' : Enter a short position;
             - 'call' : Enter a call option;
-            - 'put' : Enter a put option.
+            - 'put' : Enter a put option;
+            - 'currency' : Enter 
         - entry_datetime : The datetime object associated with the time the position was entered;
         - volume : The number of market objects that the user wishes to purchase;
         - stop_loss (optional) : The stop loss for the market object;
@@ -395,7 +408,7 @@ class Portfolio:
         if not(equity): raise RuntimeError(f'Asset type {asset_type} is not recognised!') from None
 
         # Add the symbol if it does not exist
-        self.add_symbol(symbol)
+        self.add_symbol(symbol, )
 
         # Purchase a position in that market object
         self.positions[symbol].enter_position(
